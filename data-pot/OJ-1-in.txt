@@ -1,0 +1,4 @@
+2
+write file1 1 10
+BlueSharks
+ls

@@ -1,0 +1,16 @@
+12
+write file1 1 10
+BlueSharks
+write file2 1 9
+BlueWings
+read file1 5 5
+ls
+read file2 0 15
+unlink file1
+ls
+read file2 3 5
+unlink file2
+ls
+write file2 1 4
+Grey
+read file2 0 15
