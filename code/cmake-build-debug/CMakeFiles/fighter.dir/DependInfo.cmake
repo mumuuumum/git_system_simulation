@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_C
-  "E:/NJU/project_2/新建文件夹/fighter.c" "E:/NJU/project_2/新建文件夹/cmake-build-debug/CMakeFiles/fighter.dir/fighter.c.obj"
+  "E:/NJU/project_2/code/fighter.c" "E:/NJU/project_2/code/cmake-build-debug/CMakeFiles/fighter.dir/fighter.c.obj"
   )
 set(CMAKE_C_COMPILER_ID "GNU")
 
