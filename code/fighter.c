@@ -34,6 +34,8 @@ int str_to_num (const char *str,int Start_point,int End_point);
 void Write (char *filename,int offset,int len);
 void Read (char *filename,int offset,int len);
 void Unlink (char *filename);
+void Ls ();
+void Commit (char *commit_name);
 
 int main () {
     Initial_Commit(&Staging_area);
@@ -86,10 +88,15 @@ int main () {
                 Unlink(filename);
                 break;
             case 'l':
+                Ls();
                 break;
             case 'c':
                 switch (command_str[1]) {
                     case 'o':
+                        for (Start_point = 7,End_point = 7;command_str [++End_point] != '\0' ;);
+                        End_point--;
+                        Part_strcpy(filename,command_str,Start_point,End_point);
+                        Commit(filename);
                         break;
                     case 'h':
                         ;
@@ -275,4 +282,59 @@ void Unlink (char *filename) {
             strcat(Address->Name,filename);
         }
     }
+}
+void Ls () {
+    struct File *(Content [132 * 2]);
+    for (int i = 0 ; i < 132 * 2 ; i++) {
+        Content [i] = NULL;
+    }
+    int Content_num = 0;
+    for (int i = 0 ; i <= Staging_area.top ; i++) {
+        if (Staging_area.Content [i]->Name [0] != '-') {
+            Content [Content_num] = Staging_area.Content [i];
+            Content_num++;
+        }
+    }
+
+    if (Head != NULL) {
+        for (int i = 0 ; i <= Head->top ; i++) {
+            if (Head->Content [i]->Name [0] != '-') {
+                Content [Content_num] = Head->Content [i];
+                Content_num++;
+            }
+        }
+    }
+
+    int *arr = malloc(Content_num * sizeof(int));
+    for (int i = 0 ; i < Content_num ; i++) {
+        arr [i] = i;
+    }
+
+    for (int i = 0; i < Content_num - 1; i++) {
+        int max = arr [i];
+        for (int j = i + 1; j < Content_num ; j++) {
+            if (strcmp(Content [max]->Name,Content [j]->Name) < 0) {
+                max = arr [j];
+            }
+        }
+        arr [i] = max;
+    }
+
+    int file_number = 0;
+    for (int i = 1; i < Content_num ; i++) {
+        if (strcmp(Content [i - 1]->Name,Content [i] ->Name) != 0) {
+            file_number++;
+        }
+    }
+    if (file_number == 0) {
+        printf("0\n");
+    } else {
+        printf("%d %s %s\n", file_number, Content [arr [Content_num]]->Name, Content [arr [0]]->Name);
+    }
+    free(arr);
+}
+void Commit (char *commit_name) {
+    strcpy(Staging_area.Commit_name,commit_name);
+    Staging_area.Commit_one = Head;
+    Initial_Commit(&Staging_area);
 }
