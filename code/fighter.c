@@ -124,7 +124,7 @@ int main () {
                 for (Start_point = 6,End_point = 6;command_str [++End_point] != ' ' ;);
                 End_point--;
                 Part_strcpy(filename,command_str,Start_point,End_point);
-                for (Start_point = End_point + 2,End_point += 2; command_str [++End_point] != ' ';);
+                for (Start_point = End_point + 2,End_point += 2; command_str [++End_point] != '\0';);
                 End_point--;
                 Part_strcpy(cmtname,command_str,Start_point,End_point);
                 Merge(filename,cmtname);
@@ -161,10 +161,10 @@ struct File *Search_File (char *Name_searched) {
         in_stage = 1;
         return Address;
     }
-    if (Staging_area.Commit_one == NULL) {
+    if (Head == NULL) {
         return NULL;
     }
-    Address = Search_Common(Name_searched,Staging_area.Commit_one);
+    Address = Search_Common(Name_searched,Head);
     if (Address != NULL) {
         in_stage = 0;
         return Address;
@@ -190,7 +190,7 @@ struct File *Search_Staging (char *Name_searched) {
     return NULL;
 }
 struct File *Search_Common (char *Name_searched,struct Commit *Commit) {
-    for (int i = 0; i < Commit->top ; i++) {
+    for (int i = 0; i <= Commit->top ; i++) {
         if (strcmp((Commit->Content [i])->Name,Name_searched) == 0) {
             return Commit->Content [i];
         }
@@ -214,10 +214,16 @@ struct File *Search_Common (char *Name_searched,struct Commit *Commit) {
         Address_searched_two = Search_Common(Name_searched,Commit->Commit_two);
     }
     if (Address_searched_one != NULL && Address_searched_two != NULL) {
-        if (Address_searched_one->Time > Address_searched_two->Time) {
+        if (Address_searched_one->Name [0] == '-') {
+            return Address_searched_two;
+        } else if (Address_searched_two->Name [0] == '-') {
             return Address_searched_one;
         } else {
-            return Address_searched_two;
+            if (Address_searched_one->Time > Address_searched_two->Time) {
+                return Address_searched_one;
+            } else {
+                return Address_searched_two;
+            }
         }
     }
     if (Address_searched_one == NULL && Address_searched_two != NULL) {
@@ -276,7 +282,9 @@ void Write (char *filename,int offset,int len) {
     char *tmp_str = malloc((len + 1) * sizeof(char));
     memset(tmp_str,0,(len + 1) * sizeof(char));
     gets(tmp_str);
-    strcat(Address->Content,tmp_str);
+    for (int i = 0 , j = offset ; i < strlen(tmp_str) ; i++ , j++) {
+        Address->Content [j] = tmp_str [i];
+    }
     free(tmp_str);
     Address->Time = ++time;
 }
@@ -310,7 +318,7 @@ void Unlink (char *filename) {
             Staging_area.Content [++Staging_area.top] = malloc(sizeof(struct File));
             Initial_File(Staging_area.Content [Staging_area.top]);
             Staging_area.Content [Staging_area.top]->Name [0] = '-';
-            strcat(Address->Name,filename);
+            strcat(Staging_area.Content [Staging_area.top]->Name,filename);
         }
     }
 }
@@ -324,14 +332,31 @@ void Ls () {
         if (Staging_area.Content [i]->Name [0] != '-') {
             Content [Content_num] = Staging_area.Content [i];
             Content_num++;
+        } else {
+            Content_num--;
         }
     }
 
     if (Head != NULL) {
-        for (int i = 0 ; i <= Head->top ; i++) {
-            if (Head->Content [i]->Name [0] != '-') {
-                Content [Content_num] = Head->Content [i];
-                Content_num++;
+        if (Head->Commit_one != NULL && Head->Commit_two != NULL) {
+            for (int i = 0 ; i <= Head->Commit_one->top ; i++) {
+                if (Head->Commit_one->Content [i]->Name [0] != '-') {
+                    Content [Content_num] = Head->Commit_one->Content [i];
+                    Content_num++;
+                }
+            }
+            for (int i = 0 ; i <= Head->Commit_two->top ; i++) {
+                if (Head->Commit_two->Content [i]->Name [0] != '-') {
+                    Content [Content_num] = Head->Commit_two->Content [i];
+                    Content_num++;
+                }
+            }
+        } else {
+            for (int i = 0 ; i <= Head->top ; i++) {
+                if (Head->Content [i]->Name [0] != '-') {
+                    Content [Content_num] = Head->Content [i];
+                    Content_num++;
+                }
             }
         }
     }
@@ -406,47 +431,7 @@ struct Commit *Search_Commit (char *Name_searched) {
     }
     return NULL;
 }
-/*struct File *Search_Common (char *Name_searched,struct Commit *Commit) {
-    for (int i = 0; i < Commit->top ; i++) {
-        if (strcmp((Commit->Content [i])->Name,Name_searched) == 0) {
-            return Commit->Content [i];
-        }
-        if ((Commit->Content [i])->Name [0] == '-') {
-            for (int j = 1;(Commit->Content [i])->Name [j] != 0;j++) {
-                if ((Commit->Content [i])->Name [j] != Name_searched [j - 1]) {
-                    break;
-                }
-                if (j == strlen(Name_searched)) {
-                    return Commit->Content [i];
-                }
-            }
-        }
-    }
-    struct File *Address_searched_one = NULL;
-    if (Commit->Commit_one != NULL) {
-        Address_searched_one = Search_Common(Name_searched,Commit->Commit_one);
-    }
-    struct File *Address_searched_two = NULL;
-    if (Commit->Commit_two != NULL) {
-        Address_searched_two = Search_Common(Name_searched,Commit->Commit_two);
-    }
-    if (Address_searched_one != NULL && Address_searched_two != NULL) {
-        if (Address_searched_one->Time > Address_searched_two->Time) {
-            return Address_searched_one;
-        } else {
-            return Address_searched_two;
-        }
-    }
-    if (Address_searched_one == NULL && Address_searched_two != NULL) {
-        return Address_searched_two;
-    }
-    if (Address_searched_two == NULL && Address_searched_one != NULL) {
-        return Address_searched_one;
-    }
-    if (Address_searched_one == NULL && Address_searched_two == NULL) {
-        return NULL;
-    }
-}*/
+
 struct Commit *Search_Point (struct Commit *Commit, char *Name_searched) {
     if (strcmp(Commit->Commit_name, Name_searched) == 0) {
         return Commit;
@@ -480,7 +465,7 @@ int Staging_is_empty () {
     return 0;
 }
 void Checkout (char *commit_name) {
-    if (Staging_is_empty() == 1) {
+    if (Staging_is_empty() != 1) {
         return;
     }
     struct Commit *tmp = Search_Commit(commit_name);
@@ -509,11 +494,17 @@ void Merge (char *mergee,char *commit_name) {
         new_commit->new_point_id = Head->new_point_id;
         Head->new_point_id = -1;
 
-        Newest_point.point [commit_mergee->new_point_id] = Newest_point.point [Newest_point.top];
-        Newest_point.point [Newest_point.top] = NULL;
-        Newest_point.top--;
-        Newest_point.point [commit_mergee->new_point_id] ->new_point_id = commit_mergee->new_point_id;
-        commit_mergee->new_point_id = -1;
+        if (commit_mergee->new_point_id != Newest_point.top) {
+            Newest_point.point [commit_mergee->new_point_id] = Newest_point.point [Newest_point.top];
+            Newest_point.point [Newest_point.top] = NULL;
+            Newest_point.top--;
+            Newest_point.point [commit_mergee->new_point_id] ->new_point_id = commit_mergee->new_point_id;
+            commit_mergee->new_point_id = -1;
+        } else {
+            Newest_point.point [Newest_point.top--] = NULL;
+            commit_mergee->new_point_id = -1;
+        }
+
     } else if (Head->new_point_id != -1) {
         Newest_point.point [Head->new_point_id] = new_commit;
         new_commit->new_point_id = Head->new_point_id;
@@ -526,4 +517,5 @@ void Merge (char *mergee,char *commit_name) {
         Newest_point.point [++Newest_point.top] = new_commit;
         new_commit->new_point_id = Newest_point.top;
     }
+    Head = new_commit;
 }
