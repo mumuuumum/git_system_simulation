@@ -15,23 +15,23 @@ struct Commit{
 struct File{
     int Time;
     char Name [132];
-    char Content [107];
+    char Content [300000];
 };
 
 struct Newest_point {
-    struct Commit *(point [132]);
+    struct Commit *(point [1000]);
     int top;
 };
 
 struct Content {
-    struct File *(file_address [10000]);
+    struct File *(file_address [15000]);
     int top;
 };
 
 struct Newest_point Newest_point;
 struct Commit *Head = NULL;
 struct Commit Staging_area;
-char command_str [132];
+char command_str [170];
 int time;
 int in_stage;
 
@@ -64,7 +64,7 @@ int main () {
     
     getchar();
     for (int i = 0; i < command_number ; i++) {
-        memset(command_str,0,132 * sizeof(char));
+        memset(command_str,0,170 * sizeof(char));
         gets(command_str);
         char filename [132];
         char cmtname [132];
@@ -142,7 +142,7 @@ int main () {
     return 0;
 }
 void Initial_Newest_point () {
-    for (int i = 0; i < 132 ; i++) {
+    for (int i = 0; i < 1000 ; i++) {
         Newest_point.point [i] = NULL;
     }
     Newest_point.top = -1;
@@ -266,8 +266,8 @@ void Write (char *filename,int offset,int len) {
         } else {
             Staging_area.Content [++Staging_area.top] = malloc(sizeof(struct File));
             Initial_File(Staging_area.Content [Staging_area.top]);
-            Part_strcpy(Staging_area.Content [Staging_area.top]->Content,Address->Content,0,131);
-            Part_strcpy(Staging_area.Content [Staging_area.top]->Name,filename,0,131);
+            Part_strcpy(Staging_area.Content [Staging_area.top]->Content,Address->Content,0, strlen(Address->Content));
+            Part_strcpy(Staging_area.Content [Staging_area.top]->Name,filename,0, strlen(filename));
             Address = Staging_area.Content [Staging_area.top];
         }
     } else {
@@ -315,17 +315,18 @@ void Unlink (char *filename) {
             memset(Address->Name,0,132 * sizeof(char));
             Address->Name [0] = '-';
             strcat(Address->Name,filename);
-            memset(Address->Content,0,132 * sizeof(char));
+            memset(Address->Content,0, strlen(Address->Content) * sizeof(char));
         } else {
             Staging_area.Content [++Staging_area.top] = malloc(sizeof(struct File));
             Initial_File(Staging_area.Content [Staging_area.top]);
             Staging_area.Content [Staging_area.top]->Name [0] = '-';
             strcat(Staging_area.Content [Staging_area.top]->Name,filename);
+            Staging_area.Content [Staging_area.top]->Time = time;
         }
     }
 }
 void Ls () {
-    struct Content *content = malloc(sizeof(*content));
+    struct Content *content = malloc(sizeof(struct Content));
     content->top = -1;
     for (int i = 0 ; i < 10000 ; i++) {
         content->file_address [i] = NULL;
@@ -333,7 +334,6 @@ void Ls () {
     int content_num = 0;
 
     Collect_file(content,&Staging_area);
-
     int *arr = malloc((content->top + 1) * sizeof(int));
     for (int i = 0 ; i <= content->top ; i++) {
         arr [i] = i;
@@ -353,58 +353,106 @@ void Ls () {
     }
 
     int dark_loca = -1;
-    for (int i = 0 ; i <= content->top ; i++) {
-        if (content->file_address [arr [i]]->Name [0] == '-' && content->file_address [arr [i + 1]]->Name [0] != '-') {
-            dark_loca = i;
-            break;
+    if (content->top >= 1) {
+        for (int i = 0 ; i < content->top ; i++) {
+            if (content->file_address [arr [i]]->Name [0] == '-' && content->file_address [arr [i + 1]]->Name [0] != '-') {
+                dark_loca = i;
+                break;
+            }
+        }
+    } else if (content->top == 0) {
+        if (content->file_address [arr [content->top]]->Name [0] == '-') {
+            dark_loca = content->top;
         }
     }
 
     int low = -1,high = -1;
-    int tmp = -1;
     if (content->top > 0) {
-        for (int i = dark_loca + 1 ; i < content->top - 1;i++) {
-            if (strcmp(content->file_address [arr [i]]->Name,content->file_address [arr [i + 1]]->Name) != 0) {
-                if (Search_File(content->file_address [arr [i]]->Name)->Name [0] == '-') {
-                    continue;
-                } else {
+        if (dark_loca == content->top - 1) {
+            if (Search_File(content->file_address [arr [content->top]]->Name)->Name [0] != '-') {
+                content_num++;
+                low = content->top;
+                high = content->top;
+            }
+        } else if (dark_loca == content->top - 2) {
+            if (strcmp(content->file_address [arr [content->top - 1]]->Name,content->file_address [arr [content->top]]->Name) == 0) {
+                if (Search_File(content->file_address [arr [content->top]]->Name)->Name [0] != '-') {
+                    content_num++;
+                    low = content->top;
+                    high = content->top;
+                }
+            } else {
+                int tmp_arr [2] = {-2, -2};
+                if (Search_File(content->file_address [arr [content->top - 1]]->Name)->Name [0] != '-') {
+                    tmp_arr [0] = content->top - 1;
+                    content_num++;
+                }
+                if (Search_File(content->file_address [arr [content->top]]->Name)->Name [0] != '-') {
+                    tmp_arr [1] = content->top;
+                    content_num++;
+                }
+                if (tmp_arr [0] != -2) {
+                    low = tmp_arr [0];
+                } else if (tmp_arr [1] != -2) {
+                    low = tmp_arr [1];
+                }
+                if (tmp_arr [1] != -2) {
+                    high = tmp_arr [1];
+                } else if (tmp_arr [0] != -2) {
+                    high = tmp_arr [0];
+                }
+            }
+        } else {
+            int tmp = -1;
+            for (int i = dark_loca + 1 ; i < content->top - 1;i++) {
+                if (strcmp(content->file_address [arr [i]]->Name,content->file_address [arr [i + 1]]->Name) != 0) {
+                    if (Search_File(content->file_address [arr [i]]->Name)->Name [0] == '-') {
+                        continue;
+                    } else {
+                        if (low == -1) {
+                            low = i;
+                        }
+                        tmp = i;
+                        content_num++;
+                    }
+                }
+            }
+            if (strcmp(content->file_address [arr [content->top - 1]]->Name,content->file_address [arr [content->top]]->Name) == 0) {
+                if (Search_File(content->file_address [arr [content->top]]->Name)->Name [0] != '-') {
+                    high = content->top;
                     if (low == -1) {
-                        low = i;
+                        low = high;
                     }
                     content_num++;
-                    tmp = i;
                 }
-            }
-        }
+                if (high == -1) {
+                    high = tmp;
+                }
+            } else {
+                int tmp_arr [2] = {-2,-2};
+                if (Search_File(content->file_address [arr [content->top - 1]]->Name)->Name [0] != '-') {
+                    tmp_arr [0] = content->top - 1;
+                    content_num++;
+                }
+                if (Search_File(content->file_address [arr [content->top]]->Name)->Name [0] != '-') {
+                    tmp_arr [1] = content->top;
+                    content_num++;
+                }
+                if (low == -1) {
+                    if (tmp_arr [0] != -2) {
+                        low = tmp_arr [0];
+                    } else if (tmp_arr [1] != -2) {
+                        low = tmp_arr [1];
+                    }
+                }
 
-        if (strcmp(content->file_address [arr [content->top - 1]]->Name,content->file_address [arr [content->top]]->Name) == 0) {
-            if (Search_File(content->file_address [arr [content->top - 1]]->Name)->Name [0] != '-') {
-                if (high == -1) {
-                    high = content->top;
+                if (tmp_arr [1] != -2) {
+                    high = tmp_arr [1];
+                } else if (tmp_arr [0] != -2) {
+                    high = tmp_arr [0];
+                } else {
+                    high = arr [tmp];
                 }
-                content_num++;
-            }
-        } else {
-            if (Search_File(content->file_address [arr [content->top - 1]]->Name)->Name [0] != '-') {
-                if (high == -1) {
-                    high = content->top - 1;
-                }
-                content_num++;
-            }
-            if (Search_File(content->file_address [arr [content->top]]->Name)->Name [0] != '-') {
-                if (high == -1) {
-                    high = content->top;
-                }
-                content_num++;
-            }
-        }
-        if (tmp == -1) {
-            if (high != -1) {
-                low = high;
-            }
-        } else {
-            if (high == -1) {
-                high = low;
             }
         }
     } else if (content->top == 0) {
@@ -463,7 +511,6 @@ struct Commit *Search_Commit (char *Name_searched) {
     }
     return NULL;
 }
-
 struct Commit *Search_Point (struct Commit *Commit, char *Name_searched) {
     if (strcmp(Commit->Commit_name, Name_searched) == 0) {
         return Commit;
