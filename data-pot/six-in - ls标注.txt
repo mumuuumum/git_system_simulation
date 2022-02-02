@@ -368,7 +368,7 @@ o@;zYc|#imE
 ls
 read filename13 24923 98
 commit commit72
-ls
+ls                                                      40
 unlink filename19
 ls
 checkout commit3
@@ -483,7 +483,7 @@ merge commit30 commit96
 read filename25 126844 32
 write filename36 173763 37
 \1\IzJ1Bc31Ka@=!T#x6'`+Ke L@`.:$MaKNj
-ls
+ls                                                                        50
 merge commit72 commit97
 merge commit68 commit98
 read filename16 88374 98
@@ -567,7 +567,7 @@ read filename8 41849 73
 merge commit16 commit109
 read filename34 98996 37
 ls
-ls
+ls                                                        60
 read filename31 135314 86
 read filename38 35198 62
 commit commit110
@@ -737,7 +737,7 @@ checkout commit57
 read filename7 171545 15
 ls
 checkout commit99
-ls
+ls                                                                70
 checkout commit44
 read filename14 134175 41
 unlink filename46
@@ -826,7 +826,7 @@ read filename49 67105 93
 commit commit156
 ls
 merge commit62 commit157
-ls
+ls                                                                80
 read filename10 226568 93
 read filename2 101732 68
 checkout commit83
@@ -868,7 +868,7 @@ checkout commit137
 ls
 read filename43 139724 21
 ls
-ls
+ls                                                                 90
 read filename15 66204 98
 commit commit161
 read filename9 91718 95
@@ -975,7 +975,7 @@ read filename28 235307 39
 unlink filename12
 checkout commit95
 merge commit138 commit176
-ls
+ls                                                                     100
 read filename9 76180 22
 merge commit130 commit177
 checkout commit106
@@ -1018,7 +1018,7 @@ write filename62 156407 68
 read filename58 167843 69
 ls
 merge commit25 commit185
-ls
+ls                                                             110
 unlink filename28
 unlink filename44
 read filename3 198988 77
@@ -1117,7 +1117,7 @@ read filename10 226576 85
 read filename50 5729 69
 read filename46 123159 15
 read filename41 105601 21
-ls
+ls                                                    120
 checkout commit132
 ls
 merge commit184 commit205
@@ -1199,7 +1199,7 @@ commit commit224
 read filename38 225260 51
 merge commit19 commit225
 read filename32 33622 69
-ls
+ls                                                            130
 read filename33 227041 28
 unlink filename16
 checkout commit7
@@ -1305,7 +1305,7 @@ read filename5 261937 1
 read filename27 14345 93
 write filename75 178980 66
 @(6[kz'bXEQVxBUL8Y5PykSh{eF.tcuT%^m`nI-w$[6p5!t4$R28co~*JPq=V;h@C`
-ls
+ls                                                                         140
 read filename44 20192 36
 ls
 read filename72 11999 100

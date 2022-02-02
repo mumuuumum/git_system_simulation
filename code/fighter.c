@@ -1,39 +1,48 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#define len_cmt_name 140
+#define num_cmt_file 1000
+#define len_file_name 140
+#define len_file_content 1500000
+#define num_newest_point 5000
+#define num_collect_files 10000
+#define len_command 200
 
 //提交的结构体
 struct Commit{
     struct Commit *Commit_one;
     struct Commit *Commit_two;
-    char Commit_name [132];
-    struct File *(Content [132]);
+    char Commit_name [len_cmt_name];
+    struct File *(Content [num_cmt_file]);
     int new_point_id;
     int top;
 };
 //文件的结构体
 struct File{
     int Time;
-    char Name [132];
-    char Content [300000];
+    char Name [len_file_name];
+    char Content [len_file_content];
 };
 
 struct Newest_point {
-    struct Commit *(point [1000]);
+    struct Commit *(point [num_newest_point]);
     int top;
 };
 
 struct Content {
-    struct File *(file_address [15000]);
+    struct File *(file_address [num_collect_files]);
     int top;
 };
 
 struct Newest_point Newest_point;
 struct Commit *Head = NULL;
 struct Commit Staging_area;
-char command_str [170];
+char command_str [len_command];
 int time;
 int in_stage;
+//int cnt = 0;
+//int acnt = 0;
 
 void Initial_Newest_point ();
 void Initial_Commit (struct Commit *Commit);
@@ -61,19 +70,24 @@ int main () {
 
     int command_number = 0;
     scanf("%d", &command_number);
-    
+
     getchar();
-    for (int i = 0; i < command_number ; i++) {
-        memset(command_str,0,170 * sizeof(char));
+    for (int i = 0; i < command_number ; i++/*，acnt++*/) {
+
+        memset(command_str,0,len_command * sizeof(char));
         gets(command_str);
-        char filename [132];
-        char cmtname [132];
+        /*if (strcmp(command_str,"read filename22 143538 39") == 0) {
+            printf("\n%d\n",i);
+            exit(0);
+        }*/
+        char filename [len_file_name];
+        char cmtname [len_cmt_name];
         int offset;
         int len;
         int Start_point;
         int End_point;
-        memset(filename,0,132 * sizeof(char));
-        memset(cmtname,0,132 * sizeof(char));
+        memset(filename,0,len_file_name * sizeof(char));
+        memset(cmtname,0,len_cmt_name * sizeof(char));
         switch (command_str[0]) {
             case 'w':
                 //write
@@ -89,6 +103,7 @@ int main () {
                 Write(filename,offset,len);
                 break;
             case 'r':
+                //cnt++;
                 //read
                 for (Start_point = 5,End_point = 7; command_str [++End_point] != ' ' ;);
                 End_point--;
@@ -109,6 +124,7 @@ int main () {
                 Unlink(filename);
                 break;
             case 'l':
+                //cnt++;
                 Staging_area.Commit_one = Head;
                 Ls();
                 Staging_area.Commit_one = NULL;
@@ -142,7 +158,7 @@ int main () {
     return 0;
 }
 void Initial_Newest_point () {
-    for (int i = 0; i < 1000 ; i++) {
+    for (int i = 0; i < num_newest_point ; i++) {
         Newest_point.point [i] = NULL;
     }
     Newest_point.top = -1;
@@ -150,8 +166,8 @@ void Initial_Newest_point () {
 void Initial_Commit (struct Commit *Commit) {
     Commit->Commit_one = NULL;
     Commit->Commit_two = NULL;
-    memset(Commit->Commit_name,0,132 * sizeof(char));
-    for (int i = 0; i < 132 ; i++) {
+    memset(Commit->Commit_name,0,len_cmt_name * sizeof(char));
+    for (int i = 0; i < num_cmt_file ; i++) {
         Commit->Content [i] = NULL;
     }
     Commit->top = -1;
@@ -159,8 +175,8 @@ void Initial_Commit (struct Commit *Commit) {
 }
 void Initial_File (struct File *File) {
     File->Time = 0;
-    memset(File->Name,0,132);
-    memset(File->Content,0,132);
+    memset(File->Name,0,len_file_name);
+    memset(File->Content,0,len_file_content);
 }
 struct File *Search_File (char *Name_searched) {
     struct File *Address = NULL;
@@ -189,7 +205,7 @@ struct File *Search_Staging (char *Name_searched) {
                 if ((Staging_area.Content [i])->Name [j] != Name_searched [j - 1]) {
                     break;
                 }
-                if (j == strlen(Name_searched)) {
+                if (j == strlen(Name_searched) && (Staging_area.Content [i])->Name [j + 1] == 0) {
                     return Staging_area.Content [i];
                 }
             }
@@ -207,7 +223,7 @@ struct File *Search_Common (char *Name_searched,struct Commit *Commit) {
                 if ((Commit->Content [i])->Name [j] != Name_searched [j - 1]) {
                     break;
                 }
-                if (j == strlen(Name_searched)) {
+                if (j == strlen(Name_searched) && (Commit->Content [i])->Name [j + 1] == 0) {
                     return Commit->Content [i];
                 }
             }
@@ -223,9 +239,9 @@ struct File *Search_Common (char *Name_searched,struct Commit *Commit) {
     }
     if (Address_searched_one != NULL && Address_searched_two != NULL) {
         if (Address_searched_one->Time > Address_searched_two->Time) {
-                return Address_searched_one;
+            return Address_searched_one;
         } else {
-                return Address_searched_two;
+            return Address_searched_two;
         }
     }
     if (Address_searched_one == NULL && Address_searched_two != NULL) {
@@ -257,8 +273,8 @@ void Write (char *filename,int offset,int len) {
             if (Address->Name [0] == '-') {
                 for (int i = 0;;i++) {
                     if (Staging_area.Content [i] == Address) {
-                        memset(Address->Name,0,132 * sizeof(char));
-                        Part_strcpy(Address->Name,filename,0,131);
+                        memset(Address->Name,0,len_file_name * sizeof(char));
+                        Part_strcpy(Address->Name,filename,0,len_file_name - 1);
                         break;
                     }
                 }
@@ -266,15 +282,15 @@ void Write (char *filename,int offset,int len) {
         } else {
             Staging_area.Content [++Staging_area.top] = malloc(sizeof(struct File));
             Initial_File(Staging_area.Content [Staging_area.top]);
-            Part_strcpy(Staging_area.Content [Staging_area.top]->Content,Address->Content,0, strlen(Address->Content));
-            Part_strcpy(Staging_area.Content [Staging_area.top]->Name,filename,0, strlen(filename));
+            Part_strcpy(Staging_area.Content [Staging_area.top]->Content,Address->Content,0, strlen(Address->Content) - 1);
+            Part_strcpy(Staging_area.Content [Staging_area.top]->Name,filename,0, strlen(filename) - 1);
             Address = Staging_area.Content [Staging_area.top];
         }
     } else {
         Address = malloc(sizeof(struct File));
         Staging_area.Content [++Staging_area.top] = Address;
         Initial_File(Address);
-        strcpy((Address)->Name,filename);
+        strcpy(Address->Name,filename);
     }
     if (offset > strlen(Address->Content)) {
         for (int i = strlen(Address->Content); i < offset;i++) {
@@ -291,6 +307,7 @@ void Write (char *filename,int offset,int len) {
     Address->Time = time;
 }
 void Read (char *filename,int offset,int len) {
+
     struct File *Address = Search_File(filename);
     if (Address != NULL && Address->Name [0] != '-') {
         int i;
@@ -312,7 +329,7 @@ void Unlink (char *filename) {
     struct File *Address = Search_File(filename);
     if (Address != NULL && Address->Name [0] != '-') {
         if (in_stage == 1) {
-            memset(Address->Name,0,132 * sizeof(char));
+            memset(Address->Name,0,len_file_name * sizeof(char));
             Address->Name [0] = '-';
             strcat(Address->Name,filename);
             memset(Address->Content,0, strlen(Address->Content) * sizeof(char));
@@ -328,7 +345,7 @@ void Unlink (char *filename) {
 void Ls () {
     struct Content *content = malloc(sizeof(struct Content));
     content->top = -1;
-    for (int i = 0 ; i < 10000 ; i++) {
+    for (int i = 0 ; i < num_collect_files ; i++) {
         content->file_address [i] = NULL;
     }
     int content_num = 0;
@@ -338,7 +355,11 @@ void Ls () {
     for (int i = 0 ; i <= content->top ; i++) {
         arr [i] = i;
     }
-
+    /*if (acnt == 3135) {
+        for (int i = 0 ; i <= content->top ; i++) {
+            printf("%s %d %c\n\n",content->file_address [arr [i]]->Name,content->file_address [arr [i]]->Time,Search_File(content->file_address [arr [i]]->Name)->Name [0]);
+        }
+    }*/
     for (int i = 0; i < content->top; i++) {
         int min = i;
 
@@ -451,7 +472,7 @@ void Ls () {
                 } else if (tmp_arr [0] != -2) {
                     high = tmp_arr [0];
                 } else {
-                    high = arr [tmp];
+                    high = tmp;
                 }
             }
         }
@@ -462,7 +483,11 @@ void Ls () {
             high = content->top;
         }
     }
-
+    /*if (acnt == 3136) {
+        for (int i = 0 ; i <= content->top ; i++) {
+            printf("%s %d %c\n",content->file_address [arr [i]]->Name,content->file_address [arr [i]]->Time,Search_File(content->file_address [arr [i]]->Name)->Name [0]);
+        }
+    } else {*/
     if (content_num == 0) {
         printf("0");
     } else {
@@ -471,6 +496,7 @@ void Ls () {
     printf("\n");
     free(arr);
     free(content);
+    //}
 }
 void Collect_file (struct Content *content,struct Commit *commit) {
     for (int i = 0 ; i <= commit->top ; i++) {
@@ -589,9 +615,9 @@ void Merge (char *mergee,char *commit_name) {
         new_commit->new_point_id = Head->new_point_id;
         Head->new_point_id = -1;
     } else if (commit_mergee->new_point_id != -1) {
-     Newest_point.point [commit_mergee->new_point_id] = new_commit;
-     new_commit->new_point_id = commit_mergee->new_point_id;
-     commit_mergee->new_point_id = -1;
+        Newest_point.point [commit_mergee->new_point_id] = new_commit;
+        new_commit->new_point_id = commit_mergee->new_point_id;
+        commit_mergee->new_point_id = -1;
     } else {
         Newest_point.point [++Newest_point.top] = new_commit;
         new_commit->new_point_id = Newest_point.top;

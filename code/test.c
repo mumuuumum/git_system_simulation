@@ -3,18 +3,16 @@
 //
 
 #include <stdio.h>
-
+#include <stdlib.h>
+#include <string.h>
 struct arr {
     int arr [10];
 };
 
 int main () {
-
-    struct arr first;
-    struct arr second;
-    for (int i = 0 ,j = 9; i < 10 ;i++,j--) {
-        first.arr [i] = i;
-        second.arr [i] = i
+    char str [10] = "abc def ";
+    for (int i = 0; i < 10 ;i++) {
+        printf("%c",str [i]);
     }
 
 
