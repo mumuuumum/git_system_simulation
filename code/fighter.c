@@ -1,14 +1,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #define len_cmt_name 140
-#define num_cmt_file 1000
+#define num_cmt_file 10000
 #define len_file_name 140
-#define len_file_content 1500000
+#define len_file_content 150
 #define num_newest_point 5000
 #define num_collect_files 10000
 #define len_command 200
-
+#define ll long long
 //提交的结构体
 struct Commit{
     struct Commit *Commit_one;
@@ -17,11 +18,13 @@ struct Commit{
     struct File *(Content [num_cmt_file]);
     int new_point_id;
     int top;
+    int flag;
 };
 //文件的结构体
 struct File{
     int Time;
     char Name [len_file_name];
+    int start_point;
     char Content [len_file_content];
 };
 
@@ -39,10 +42,9 @@ struct Newest_point Newest_point;
 struct Commit *Head = NULL;
 struct Commit Staging_area;
 char command_str [len_command];
-int time;
+int timex;
 int in_stage;
-//int cnt = 0;
-//int acnt = 0;
+int acnt = 0;
 
 void Initial_Newest_point ();
 void Initial_Commit (struct Commit *Commit);
@@ -57,14 +59,21 @@ void Read (char *filename,int offset,int len);
 void Unlink (char *filename);
 void Ls ();
 void Collect_file (struct Content *content,struct Commit *commit);
+void Init_flag (struct Commit *commit);
 void Commit (char *commit_name);
 struct Commit *Search_Commit (char *Name_searched);
 struct Commit *Search_Point (struct Commit *Commit, char *Name_searched);
 int Staging_is_empty ();
 void Checkout (char *commit_name);
 void Merge (char *mergee,char *commit_name);
+int File_is_deleted (int dark_loca,struct File *Address,struct Content *content,int *last_loca,int *arr);
 
 int main () {
+/*#ifndef ONLINE_JUDGE // 只有在本地需要提示程序运行时间、通过文件输入输出
+    freopen("input.txt", "r", stdin); //输入写入 "input.txt" 文件中
+    freopen("output.txt", "w", stdout);//输出到 "output.txt" 文件中
+    ll _begin_time = clock(); //记录开始时间
+#endif*/
     Initial_Commit(&Staging_area);
     Initial_Newest_point ();
 
@@ -72,8 +81,7 @@ int main () {
     scanf("%d", &command_number);
 
     getchar();
-    for (int i = 0; i < command_number ; i++/*，acnt++*/) {
-
+    for (int i = 0; i < command_number ; i++,acnt++) {
         memset(command_str,0,len_command * sizeof(char));
         gets(command_str);
         /*if (strcmp(command_str,"read filename22 143538 39") == 0) {
@@ -154,7 +162,10 @@ int main () {
                 Merge(filename,cmtname);
         }
     }
-
+/*#ifndef ONLINE_JUDGE
+    ll _end_time = clock();
+    printf("time = %ld ms\n", _end_time - _begin_time);
+#endif*/
     return 0;
 }
 void Initial_Newest_point () {
@@ -172,9 +183,11 @@ void Initial_Commit (struct Commit *Commit) {
     }
     Commit->top = -1;
     Commit->new_point_id = -1;
+    Commit->flag = 0;
 }
 void Initial_File (struct File *File) {
     File->Time = 0;
+    File->start_point = -1;
     memset(File->Name,0,len_file_name);
     memset(File->Content,0,len_file_content);
 }
@@ -292,30 +305,39 @@ void Write (char *filename,int offset,int len) {
         Initial_File(Address);
         strcpy(Address->Name,filename);
     }
-    if (offset > strlen(Address->Content)) {
+    /*if (offset > strlen(Address->Content)) {
         for (int i = strlen(Address->Content); i < offset;i++) {
             Address->Content [i] = '.';
         }
-    }
+    }*/
+    Address->start_point = offset;
     char *tmp_str = malloc((len + 1) * sizeof(char));
     memset(tmp_str,0,(len + 1) * sizeof(char));
     gets(tmp_str);
-    for (int i = 0 , j = offset ; i < strlen(tmp_str) ; i++ , j++) {
+    for (int i = 0 , j = 0 ; i < strlen(tmp_str) ; i++ , j++) {
         Address->Content [j] = tmp_str [i];
     }
     free(tmp_str);
-    Address->Time = time;
+    Address->Time = timex;
 }
 void Read (char *filename,int offset,int len) {
-
     struct File *Address = Search_File(filename);
     if (Address != NULL && Address->Name [0] != '-') {
         int i;
         int j = 0;
-        for (i = offset ; Address->Content [i] != '\0' && j < len ; i++,j++) {
-            printf("%c", Address->Content [i]);
+        for (i = 0 ; (i < Address->start_point - offset) && (i < len); i++) {
+            printf(".");
         }
-        for (;j < len;j++) {
+        if (Address->start_point - offset < 1) {
+            for (j = offset - Address->start_point ;i < len && j < strlen(Address->Content);i++,j++) {
+                printf("%c",Address->Content [j]);
+            }
+        } else {
+            for (;i < len && j < strlen(Address->Content);i++,j++) {
+                printf("%c",Address->Content [j]);
+            }
+        }
+        for (;i < len;i++) {
             printf(".");
         }
     } else {
@@ -338,7 +360,7 @@ void Unlink (char *filename) {
             Initial_File(Staging_area.Content [Staging_area.top]);
             Staging_area.Content [Staging_area.top]->Name [0] = '-';
             strcat(Staging_area.Content [Staging_area.top]->Name,filename);
-            Staging_area.Content [Staging_area.top]->Time = time;
+            Staging_area.Content [Staging_area.top]->Time = timex;
         }
     }
 }
@@ -355,14 +377,8 @@ void Ls () {
     for (int i = 0 ; i <= content->top ; i++) {
         arr [i] = i;
     }
-    /*if (acnt == 3135) {
-        for (int i = 0 ; i <= content->top ; i++) {
-            printf("%s %d %c\n\n",content->file_address [arr [i]]->Name,content->file_address [arr [i]]->Time,Search_File(content->file_address [arr [i]]->Name)->Name [0]);
-        }
-    }*/
     for (int i = 0; i < content->top; i++) {
         int min = i;
-
         for (int j = i + 1; j <= content->top ; j++) {
             if (strcmp(content->file_address [arr [min]]->Name, content->file_address [arr [j]]->Name) > 0) {
                 min = j;
@@ -374,12 +390,17 @@ void Ls () {
     }
 
     int dark_loca = -1;
+    int last_loca = 0;
+
     if (content->top >= 1) {
         for (int i = 0 ; i < content->top ; i++) {
             if (content->file_address [arr [i]]->Name [0] == '-' && content->file_address [arr [i + 1]]->Name [0] != '-') {
                 dark_loca = i;
                 break;
             }
+        }
+        if (content->file_address [arr [content->top]]->Name [0] == '-') {
+            dark_loca = content->top;
         }
     } else if (content->top == 0) {
         if (content->file_address [arr [content->top]]->Name [0] == '-') {
@@ -390,123 +411,117 @@ void Ls () {
     int low = -1,high = -1;
     if (content->top > 0) {
         if (dark_loca == content->top - 1) {
-            if (Search_File(content->file_address [arr [content->top]]->Name)->Name [0] != '-') {
+            if (File_is_deleted(dark_loca,content->file_address [arr [content->top]],content,&last_loca,arr) == 0) {
                 content_num++;
                 low = content->top;
                 high = content->top;
             }
         } else if (dark_loca == content->top - 2) {
-            if (strcmp(content->file_address [arr [content->top - 1]]->Name,content->file_address [arr [content->top]]->Name) == 0) {
-                if (Search_File(content->file_address [arr [content->top]]->Name)->Name [0] != '-') {
+            int tmp_arr [2] = {-2, -2};
+            if (File_is_deleted(dark_loca,content->file_address [arr [content->top - 1]],content,&last_loca,arr) == 0) {
+                tmp_arr [0] = content->top - 1;
+                content_num++;
+            }
+            if (File_is_deleted(dark_loca,content->file_address [arr [content->top]],content,&last_loca,arr) == 0) {
+                tmp_arr [1] = content->top;
+                content_num++;
+            }
+            if (tmp_arr [0] != -2) {
+                low = tmp_arr [0];
+            } else if (tmp_arr [1] != -2) {
+                low = tmp_arr [1];
+            }
+            if (tmp_arr [1] != -2) {
+                high = tmp_arr [1];
+            } else if (tmp_arr [0] != -2) {
+                high = tmp_arr [0];
+            }
+        } else {
+            int tmp = -1;
+            for (int i = dark_loca + 1 ; i < content->top - 1;i++) {
+                if (File_is_deleted(dark_loca,content->file_address [arr [i]],content,&last_loca,arr) == 1) {
+                    continue;
+                } else {
+                    if (low == -1) {
+                        low = i;
+                    }
+                    tmp = i;
                     content_num++;
-                    low = content->top;
-                    high = content->top;
                 }
-            } else {
-                int tmp_arr [2] = {-2, -2};
-                if (Search_File(content->file_address [arr [content->top - 1]]->Name)->Name [0] != '-') {
-                    tmp_arr [0] = content->top - 1;
-                    content_num++;
-                }
-                if (Search_File(content->file_address [arr [content->top]]->Name)->Name [0] != '-') {
-                    tmp_arr [1] = content->top;
-                    content_num++;
-                }
+            }
+            int tmp_arr [2] = {-2,-2};
+            if (File_is_deleted(dark_loca,content->file_address [arr [content->top - 1]],content,&last_loca,arr) == 0) {
+                tmp_arr [0] = content->top - 1;
+                content_num++;
+            }
+            if (File_is_deleted(dark_loca,content->file_address [arr [content->top]],content,&last_loca,arr) == 0) {
+                tmp_arr [1] = content->top;
+                content_num++;
+            }
+            if (low == -1) {
                 if (tmp_arr [0] != -2) {
                     low = tmp_arr [0];
                 } else if (tmp_arr [1] != -2) {
                     low = tmp_arr [1];
                 }
-                if (tmp_arr [1] != -2) {
-                    high = tmp_arr [1];
-                } else if (tmp_arr [0] != -2) {
-                    high = tmp_arr [0];
-                }
             }
-        } else {
-            int tmp = -1;
-            for (int i = dark_loca + 1 ; i < content->top - 1;i++) {
-                if (strcmp(content->file_address [arr [i]]->Name,content->file_address [arr [i + 1]]->Name) != 0) {
-                    if (Search_File(content->file_address [arr [i]]->Name)->Name [0] == '-') {
-                        continue;
-                    } else {
-                        if (low == -1) {
-                            low = i;
-                        }
-                        tmp = i;
-                        content_num++;
-                    }
-                }
-            }
-            if (strcmp(content->file_address [arr [content->top - 1]]->Name,content->file_address [arr [content->top]]->Name) == 0) {
-                if (Search_File(content->file_address [arr [content->top]]->Name)->Name [0] != '-') {
-                    high = content->top;
-                    if (low == -1) {
-                        low = high;
-                    }
-                    content_num++;
-                }
-                if (high == -1) {
-                    high = tmp;
-                }
+            if (tmp_arr [1] != -2) {
+                high = tmp_arr [1];
+            } else if (tmp_arr [0] != -2) {
+                high = tmp_arr [0];
             } else {
-                int tmp_arr [2] = {-2,-2};
-                if (Search_File(content->file_address [arr [content->top - 1]]->Name)->Name [0] != '-') {
-                    tmp_arr [0] = content->top - 1;
-                    content_num++;
-                }
-                if (Search_File(content->file_address [arr [content->top]]->Name)->Name [0] != '-') {
-                    tmp_arr [1] = content->top;
-                    content_num++;
-                }
-                if (low == -1) {
-                    if (tmp_arr [0] != -2) {
-                        low = tmp_arr [0];
-                    } else if (tmp_arr [1] != -2) {
-                        low = tmp_arr [1];
-                    }
-                }
-
-                if (tmp_arr [1] != -2) {
-                    high = tmp_arr [1];
-                } else if (tmp_arr [0] != -2) {
-                    high = tmp_arr [0];
-                } else {
-                    high = tmp;
-                }
+                high = tmp;
             }
         }
     } else if (content->top == 0) {
-        if (Search_File(content->file_address [arr [content->top]]->Name)->Name [0] != '-') {
+        if (File_is_deleted(dark_loca,content->file_address [arr [content->top]],content,&last_loca,arr) == 0) {
             content_num++;
             low = content->top;
             high = content->top;
         }
     }
-    /*if (acnt == 3136) {
+    if (command_str [2] == 'a') {
         for (int i = 0 ; i <= content->top ; i++) {
             printf("%s %d %c\n",content->file_address [arr [i]]->Name,content->file_address [arr [i]]->Time,Search_File(content->file_address [arr [i]]->Name)->Name [0]);
         }
-    } else {*/
-    if (content_num == 0) {
-        printf("0");
     } else {
-        printf("%d %s %s",content_num,content->file_address [arr [low]]->Name,content->file_address [arr [high]]->Name);
+        if (content_num == 0) {
+            printf("0");
+        } else {
+            printf("%d %s %s", content_num, content->file_address[arr[low]]->Name,
+                   content->file_address[arr[high]]->Name);
+        }
+        printf("\n");
+        free(arr);
+        free(content);
     }
-    printf("\n");
-    free(arr);
-    free(content);
-    //}
+    Init_flag(&Staging_area);
 }
 void Collect_file (struct Content *content,struct Commit *commit) {
     for (int i = 0 ; i <= commit->top ; i++) {
+        for (int j = 0 ; j <= content->top ;j++) {
+            if (content->file_address [j] ==  commit->Content [i] || strcmp(content->file_address [j]->Name,commit->Content [i]->Name) == 0) {
+                goto here;
+            }
+        }
         content->file_address [++(content->top)] = commit->Content [i];
+        here:;
     }
-    if (commit->Commit_one != NULL) {
+    commit->flag = 1;
+    if (commit->Commit_one != NULL && commit->Commit_one->flag != 1) {
         Collect_file (content,commit->Commit_one);
     }
-    if (commit->Commit_two != NULL) {
+    if (commit->Commit_two != NULL && commit->Commit_two->flag != 1) {
         Collect_file(content,commit->Commit_two);
+    }
+}
+void Init_flag (struct Commit *commit) {
+    commit->flag = 0;
+    if (commit->Commit_one != NULL && commit->Commit_one->flag == 1) {
+        Init_flag(commit->Commit_one);
+    }
+    if (commit->Commit_two != NULL && commit->Commit_two->flag == 1) {
+        Init_flag(commit->Commit_two);
     }
 }
 void Commit (char *commit_name) {
@@ -525,39 +540,44 @@ void Commit (char *commit_name) {
     Newest_point.point [Newest_point.top] = new_commit;
     Initial_Commit(&Staging_area);
     Head = new_commit;
-    time++;
+    timex++;
 }
 struct Commit *Search_Commit (char *Name_searched) {
     for (int i = 0; i <= Newest_point.top ; i++) {
         struct Commit *Commit_searched = NULL;
         Commit_searched = Search_Point(Newest_point.point[i],Name_searched);
         if (Commit_searched != NULL) {
+            for (int j = 0 ; j <= i ; j++) {
+                Init_flag(Newest_point.point [j]);
+            }
             return Commit_searched;
         }
+    }
+    for (int i = 0 ; i <= Newest_point.top ; i++) {
+        Init_flag(Newest_point.point [i]);
     }
     return NULL;
 }
 struct Commit *Search_Point (struct Commit *Commit, char *Name_searched) {
+    Commit->flag = 1;
     if (strcmp(Commit->Commit_name, Name_searched) == 0) {
         return Commit;
     }
 
     struct Commit *Address_searched_one = NULL;
-    if (Commit->Commit_one != NULL) {
+    if (Commit->Commit_one != NULL && Commit->Commit_one->flag != 1) {
         Address_searched_one = Search_Point(Commit->Commit_one,Name_searched);
+    }
+    struct Commit *Address_searched_two = NULL;
+    if (Commit->Commit_two != NULL && Commit->Commit_two->flag != 1) {
+        Address_searched_two = Search_Point(Commit->Commit_two,Name_searched);
     }
     if (Address_searched_one != NULL) {
         return Address_searched_one;
-    }
-    struct Commit *Address_searched_two = NULL;
-    if (Commit->Commit_two != NULL) {
-        Address_searched_two = Search_Point(Commit->Commit_two,Name_searched);
-    }
-    if (Address_searched_two != NULL) {
+    } else {
         return Address_searched_two;
     }
 
-    return NULL;
 }
 int Staging_is_empty () {
     if (Staging_area.Commit_one == NULL) {
@@ -623,5 +643,26 @@ void Merge (char *mergee,char *commit_name) {
         new_commit->new_point_id = Newest_point.top;
     }
     Head = new_commit;
-    time++;
+    timex++;
+}
+int File_is_deleted (int dark_loca,struct File *Address,struct Content *content,int *last_loca,int *arr) {
+    if (Address->Name [0] == '-'){
+        return 1;
+    }
+    for (int i = *last_loca ; i <= dark_loca ; i++) {
+        for (int j = 1 ; ; j++) {
+            if (content->file_address [arr [i]]->Name [j] != Address->Name [j - 1]) {
+                break;
+            }
+            if (j == strlen(Address->Name) && content->file_address [arr [i]]->Name [j + 1] == 0) {
+                *last_loca = i;
+                if (content->file_address [arr [i]]->Time > Address->Time) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+        }
+    }
+    return 0;
 }
