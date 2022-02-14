@@ -1,0 +1,7 @@
+4
+write file1 1 10
+BlueSharks
+write file2 1 10
+BlueSharks
+unlink file1
+ls

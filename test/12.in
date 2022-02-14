@@ -1,6 +1,6 @@
 10000
-write filename1 144045 10
-BlueSharks
+write filename1 144045 8
+aW)/zLbV
 read filename1 32826 79
 read filename1 144040 23
 read filename1 18982 53
@@ -13,7 +13,7 @@ read filename1 144049 1
 ls
 unlink filename1
 write filename2 101733 85
-Shark'o(|=24&:&#-/>|iGjC0&MMz$:`MO[ymI|n;4+}PHf&s))XUY2@\{Zbm>hi)OEtGtE~UD"7`o~";S%Bd
+f8C0+'o(|=24&:&#-/>|iGjC0&MMz$:`MO[ymI|n;4+}PHf&s))XUY2@\{Zbm>hi)OEtGtE~UD"7`o~";S%Bd
 write filename3 198993 67
 }4\8nDP+$X+(}@RUR,}/nP:H:h9qp""qi#QkjQ>NXhW: HFl/UCaHKQ2[%NX#gz'V\(
 merge commit1 commit2
@@ -10597,3 +10597,4 @@ read filename434 75820 53
 checkout commit1733
 read filename208 231010 23
 checkout commit113
+

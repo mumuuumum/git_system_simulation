@@ -1,0 +1,4 @@
+2
+write file1 3 2
+98
+read file1 0 10

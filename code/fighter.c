@@ -3,10 +3,10 @@
 #include <stdlib.h>
 #include <time.h>
 #define len_cmt_name 140
-#define num_cmt_file 10000
+#define num_cmt_file 5000
 #define len_file_name 140
 #define len_file_content 150
-#define num_newest_point 5000
+#define num_newest_point 1000
 #define num_collect_files 10000
 #define len_command 200
 #define ll long long
@@ -69,14 +69,13 @@ void Merge (char *mergee,char *commit_name);
 int File_is_deleted (int dark_loca,struct File *Address,struct Content *content,int *last_loca,int *arr);
 
 int main () {
-/*#ifndef ONLINE_JUDGE // 只有在本地需要提示程序运行时间、通过文件输入输出
+#ifndef ONLINE_JUDGE // 只有在本地需要提示程序运行时间、通过文件输入输出
     freopen("input.txt", "r", stdin); //输入写入 "input.txt" 文件中
     freopen("output.txt", "w", stdout);//输出到 "output.txt" 文件中
     ll _begin_time = clock(); //记录开始时间
-#endif*/
+#endif
     Initial_Commit(&Staging_area);
     Initial_Newest_point ();
-
     int command_number = 0;
     scanf("%d", &command_number);
 
@@ -162,10 +161,10 @@ int main () {
                 Merge(filename,cmtname);
         }
     }
-/*#ifndef ONLINE_JUDGE
+#ifndef ONLINE_JUDGE
     ll _end_time = clock();
     printf("time = %ld ms\n", _end_time - _begin_time);
-#endif*/
+#endif
     return 0;
 }
 void Initial_Newest_point () {
@@ -204,8 +203,10 @@ struct File *Search_File (char *Name_searched) {
     Address = Search_Common(Name_searched,Head);
     if (Address != NULL) {
         in_stage = 0;
+        Init_flag(Head);
         return Address;
     }
+    Init_flag(Head);
     return NULL;
 }
 struct File *Search_Staging (char *Name_searched) {
@@ -227,6 +228,7 @@ struct File *Search_Staging (char *Name_searched) {
     return NULL;
 }
 struct File *Search_Common (char *Name_searched,struct Commit *Commit) {
+    Commit->flag = 1;
     for (int i = 0; i <= Commit->top ; i++) {
         if (strcmp((Commit->Content [i])->Name,Name_searched) == 0) {
             return Commit->Content [i];
@@ -243,11 +245,11 @@ struct File *Search_Common (char *Name_searched,struct Commit *Commit) {
         }
     }
     struct File *Address_searched_one = NULL;
-    if (Commit->Commit_one != NULL) {
+    if (Commit->Commit_one != NULL && Commit->Commit_one->flag != 1) {
         Address_searched_one = Search_Common(Name_searched,Commit->Commit_one);
     }
     struct File *Address_searched_two = NULL;
-    if (Commit->Commit_two != NULL) {
+    if (Commit->Commit_two != NULL && Commit->Commit_two->flag != 1) {
         Address_searched_two = Search_Common(Name_searched,Commit->Commit_two);
     }
     if (Address_searched_one != NULL && Address_searched_two != NULL) {
@@ -568,16 +570,14 @@ struct Commit *Search_Point (struct Commit *Commit, char *Name_searched) {
     if (Commit->Commit_one != NULL && Commit->Commit_one->flag != 1) {
         Address_searched_one = Search_Point(Commit->Commit_one,Name_searched);
     }
+    if (Address_searched_one != NULL) {
+        return Address_searched_one;
+    }
     struct Commit *Address_searched_two = NULL;
     if (Commit->Commit_two != NULL && Commit->Commit_two->flag != 1) {
         Address_searched_two = Search_Point(Commit->Commit_two,Name_searched);
     }
-    if (Address_searched_one != NULL) {
-        return Address_searched_one;
-    } else {
-        return Address_searched_two;
-    }
-
+    return Address_searched_two;
 }
 int Staging_is_empty () {
     if (Staging_area.Commit_one == NULL) {
